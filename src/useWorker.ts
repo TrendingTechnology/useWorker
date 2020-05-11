@@ -12,6 +12,7 @@ type Options = {
   timeout?: number;
   remoteDependencies?: string[];
   autoTerminate?: boolean;
+  transferList?: boolean;
 }
 
 const PROMISE_RESOLVE = 'resolve'
@@ -20,6 +21,7 @@ const DEFAULT_OPTIONS: Options = {
   timeout: undefined,
   remoteDependencies: [],
   autoTerminate: true,
+  transferList: true,
 }
 
 /**
@@ -111,9 +113,15 @@ export const useWorker = <T extends (...fnArgs: any[]) => any>(
         [PROMISE_REJECT]: reject,
       }
 
-    worker.current?.postMessage([[...fnArgs]])
+      const transferable: any = fnArgs.filter((x: any) => (
+        (x instanceof ArrayBuffer) || (x instanceof MessagePort)
+        // eslint-disable-next-line no-restricted-globals
+        || (self.ImageBitmap && x instanceof ImageBitmap)
+      ))
 
-    setWorkerStatus(WORKER_STATUS.RUNNING)
+      worker.current?.postMessage([[...fnArgs]], transferable)
+
+      setWorkerStatus(WORKER_STATUS.RUNNING)
     })
   ), [setWorkerStatus])
 

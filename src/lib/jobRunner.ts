@@ -16,8 +16,13 @@ const jobRunner = (userFunc: Function) => (e: MessageEvent) => {
 
   return Promise.resolve(userFunc(...userFuncArgs))
     .then(result => {
+      const transferable = result.filter((value:any) => (
+        (value instanceof ArrayBuffer) || (value instanceof MessagePort)
+        // eslint-disable-next-line no-restricted-globals
+        || (self.ImageBitmap && value instanceof ImageBitmap)
+      ))
       // @ts-ignore
-      postMessage(['SUCCESS', result])
+      postMessage(['SUCCESS', result], transferable)
     })
     .catch(error => {
       // @ts-ignore
